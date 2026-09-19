@@ -34,7 +34,7 @@ export default function QuadrantHorizontalBarChart({ productsList, maxProduct })
     }),
     datasets: [
       {
-        label: 'Sales Performance ($)',
+        label: 'Rendimiento de Ventas ($)',
         data: displayProducts.map(p => p.totalSales),
         backgroundColor: displayProducts.map(p => 
           maxProduct && p.name === maxProduct.name ? '#f43f5e' : '#06b6d4'
@@ -91,7 +91,7 @@ export default function QuadrantHorizontalBarChart({ productsList, maxProduct })
     <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col h-full">
       <div className="border-b border-slate-800 pb-3 mb-4 flex items-center justify-between">
         <h2 className="text-base font-bold text-slate-100 tracking-wide">
-          Sales performance bar chart
+          Gráfico de Barras de Rendimiento de Ventas
         </h2>
         <span className="text-[11px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/20">
           Horizontal

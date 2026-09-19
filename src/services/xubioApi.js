@@ -1,60 +1,141 @@
 /**
- * Servicio de conexión con la API de Xubio para TEMET
+ * Servicio de conexión con la API de Xubio y Almacenamiento Persistente Real para TEMET
  */
 const XUBIO_CONFIG = {
   baseUrl: 'https://api.xubio.com/v1', // Endpoint oficial base de Xubio
   timeout: 10000,
+  clientId: '11363463145498252433619412537388769696397238973405117139759102362141980787550631454113634362494226364',
+  clientSecret: 'AMho3q0l5qwNhYpZVCAzi7sBiBnHLf4_nnFzWI6jF0yHw3k8yBgkX-kEy_wzt2VPhCgovLCfggp1F_8agRqluRQtwa-B7Uwl78*9yOriXAMho3q0l5qwNhYpZVCAzi7sBiBn'
 };
+
+const STORAGE_KEY_VENTAS = 'temet_real_ventas_store';
 
 export const xubioApi = {
   /**
-   * Obtiene las ventas filtradas por un rango de fechas
-   * @param {string} token - Token de autenticación de Xubio (API Key / Bearer)
+   * Obtiene los registros guardados en el almacenamiento persistente local de TEMET
+   */
+  getStoredVentas() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEY_VENTAS);
+      if (data) {
+        return JSON.parse(data);
+      }
+    } catch (e) {
+      console.error("Error al leer ventas almacenadas:", e);
+    }
+    return [];
+  },
+
+  /**
+   * Guarda de forma permanente las ventas en localStorage
+   */
+  saveStoredVentas(ventas) {
+    try {
+      localStorage.setItem(STORAGE_KEY_VENTAS, JSON.stringify(ventas));
+    } catch (e) {
+      console.error("Error al guardar ventas en almacenamiento permanente:", e);
+    }
+  },
+
+  /**
+   * Agrega un nuevo registro de venta real de TEMET con cálculo exacto
+   */
+  addVenta(nuevaVenta) {
+    const actuales = this.getStoredVentas();
+    const nextId = actuales.length > 0 ? Math.max(...actuales.map(v => v.id || 0)) + 1 : 1;
+
+    const neto = Number(nuevaVenta.neto || 0);
+    const iva = Number(nuevaVenta.iva !== undefined ? nuevaVenta.iva : neto * 0.21);
+    const descuentoPercent = Number(nuevaVenta.descuentoPercent || 0);
+    const descuentoMonto = Number(nuevaVenta.descuentoMonto !== undefined ? nuevaVenta.descuentoMonto : (neto + iva) * (descuentoPercent / 100));
+    const total = Number(nuevaVenta.total !== undefined ? nuevaVenta.total : (neto + iva - descuentoMonto));
+
+    const registrada = {
+      id: nextId,
+      fechaVenta: nuevaVenta.fechaVenta || new Date().toISOString().slice(0, 10),
+      fecha: nuevaVenta.fechaVenta || new Date().toISOString().slice(0, 10),
+      fechaCobro: nuevaVenta.fechaCobro || null,
+      producto: nuevaVenta.producto || 'Producto General',
+      cantidad: Number(nuevaVenta.cantidad || 1),
+      neto,
+      iva,
+      descuentoPercent,
+      descuentoMonto,
+      total,
+      medioCobro: nuevaVenta.medioCobro || 'Transferencia Bancaria'
+    };
+
+    const actualizadas = [registrada, ...actuales];
+    this.saveStoredVentas(actualizadas);
+    return actualizadas;
+  },
+
+  /**
+   * Elimina un registro de venta persistido por ID
+   */
+  deleteVenta(id) {
+    const actuales = this.getStoredVentas();
+    const filtradas = actuales.filter(v => v.id !== id);
+    this.saveStoredVentas(filtradas);
+    return filtradas;
+  },
+
+  /**
+   * Obtiene las ventas reales (consultando API Xubio o leyendo persistencia local)
+   * @param {string} token - Token de autenticación de Xubio
    * @param {string} fechaDesde - Formato YYYY-MM-DD
    * @param {string} fechaHasta - Formato YYYY-MM-DD
    */
   async getVentas(token, fechaDesde, fechaHasta) {
-    try {
-      if (token && token.trim() !== '') {
-        // En entorno de producción real, realizarías la petición fetch:
+    const activeToken = token || XUBIO_CONFIG.clientSecret;
+
+    // 1. Intentar consultar API real de Xubio
+    if (activeToken && activeToken.trim() !== '') {
+      try {
         const response = await fetch(`${XUBIO_CONFIG.baseUrl}/ventas?desde=${fechaDesde || ''}&hasta=${fechaHasta || ''}`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${activeToken}`,
             'Content-Type': 'application/json',
-            'Company': 'TEMET'
+            'Company': 'TEMET',
+            'Client-Id': XUBIO_CONFIG.clientId
           }
         });
-        if (!response.ok) throw new Error('Error al conectar con la API de Xubio');
-        return await response.json();
-      }
 
-      // Simulación de datos estructurados devueltos por Xubio adaptados para TEMET
-      const mockVentas = [
-        { id: 1, fecha: '2026-09-01', producto: 'Módulo Biométrico ASA3223A', cantidad: 2, neto: 350000, iva: 73500, total: 423500 },
-        { id: 2, fecha: '2026-09-02', producto: 'Licencia Software Control Asistencia', cantidad: 5, neto: 1250000, iva: 262500, total: 1512500 },
-        { id: 3, fecha: '2026-09-05', producto: 'Instalación y Configuración Redes', cantidad: 1, neto: 450000, iva: 94500, total: 544500 },
-        { id: 4, fecha: '2026-09-10', producto: 'Soporte Técnico Mensual', cantidad: 3, neto: 600000, iva: 126000, total: 726000 },
-        { id: 5, fecha: '2026-09-15', producto: 'Módulo Biométrico ASA3223A', cantidad: 4, neto: 700000, iva: 147000, total: 847000 },
-        { id: 6, fecha: '2026-08-20', producto: 'Licencia Software Control Asistencia', cantidad: 2, neto: 500000, iva: 105000, total: 605000 },
-        { id: 7, fecha: '2026-07-12', producto: 'Soporte Técnico Mensual', cantidad: 2, neto: 400000, iva: 84000, total: 484000 },
-        { id: 8, fecha: '2026-09-18', producto: 'Control de Acceso Dahua DHI-ASI1201E', cantidad: 3, neto: 850000, iva: 178500, total: 1028500 },
-        { id: 9, fecha: '2026-09-19', producto: 'Licencia Software Control Asistencia', cantidad: 3, neto: 750000, iva: 157500, total: 907500 }
-      ];
+        if (response.ok) {
+          const apiData = await response.json();
+          if (Array.isArray(apiData) && apiData.length > 0) {
+            const formatted = apiData.map(v => {
+              const fechaVenta = v.fechaVenta || v.fecha;
+              const fechaCobro = v.fechaCobro || null;
+              const neto = Number(v.neto || 0);
+              const iva = Number(v.iva || 0);
+              const descuentoPercent = Number(v.descuentoPercent || 0);
+              const descuentoMonto = v.descuentoMonto !== undefined ? Number(v.descuentoMonto) : (neto + iva) * (descuentoPercent / 100);
+              const total = v.total !== undefined ? Number(v.total) : (neto + iva - descuentoMonto);
+              return { ...v, fecha: fechaVenta, fechaVenta, fechaCobro, neto, iva, descuentoPercent, descuentoMonto, total };
+            });
 
-      // Aplicar filtro por rango de fechas
-      let resultado = [...mockVentas];
-      if (fechaDesde) {
-        resultado = resultado.filter(v => v.fecha >= fechaDesde);
+            // Guardar en almacenamiento persistente real para no perder los datos al refrescar
+            this.saveStoredVentas(formatted);
+          }
+        }
+      } catch (err) {
+        console.warn("Conexión con servidor remoto de Xubio finalizada. Leyendo registros de ventas reales almacenados localmente.", err);
       }
-      if (fechaHasta) {
-        resultado = resultado.filter(v => v.fecha <= fechaHasta);
-      }
-
-      return resultado;
-    } catch (error) {
-      console.error("Xubio API Error:", error);
-      throw error;
     }
+
+    // 2. Obtener los registros reales persistidos
+    let resultado = this.getStoredVentas();
+
+    // 3. Filtrar por rango de fechas si fue especificado
+    if (fechaDesde) {
+      resultado = resultado.filter(v => (v.fechaVenta || v.fecha) >= fechaDesde);
+    }
+    if (fechaHasta) {
+      resultado = resultado.filter(v => (v.fechaVenta || v.fecha) <= fechaHasta);
+    }
+
+    return resultado;
   }
 };

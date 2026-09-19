@@ -10,18 +10,18 @@ export default function QuadrantTable({ productsList, totalVentas, maxProduct })
       <div>
         <div className="border-b border-slate-800 pb-3 mb-4">
           <h2 className="text-base font-bold text-slate-100 tracking-wide">
-            Sales performance statistical analysis report
+            Reporte de Análisis Estadístico de Rendimiento de Ventas
           </h2>
-          <p className="text-xs text-slate-400 mt-0.5">Reporte estadístico comparativo de ventas por producto (TEMET)</p>
+          <p className="text-xs text-slate-400 mt-0.5">Reporte estadístico comparativo por producto (TEMET)</p>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-800/80 text-slate-300 font-semibold border-b border-slate-700">
-                <th className="py-2.5 px-3">Object / Producto</th>
-                <th className="py-2.5 px-3 text-right">Sales performance ($)</th>
-                <th className="py-2.5 px-3 text-right">Percentage of sales (%)</th>
+                <th className="py-2.5 px-3">Objeto / Producto</th>
+                <th className="py-2.5 px-3 text-right">Rendimiento de Ventas ($)</th>
+                <th className="py-2.5 px-3 text-right">Porcentaje de Ventas (%)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">

@@ -79,7 +79,7 @@ export default function QuadrantPieChart({ productsList }) {
     <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col h-full">
       <div className="border-b border-slate-800 pb-3 mb-4 flex items-center justify-between">
         <h2 className="text-base font-bold text-slate-100 tracking-wide">
-          Percentage of sales
+          Porcentaje de Ventas
         </h2>
         <span className="text-[11px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/20">
           Distribución %

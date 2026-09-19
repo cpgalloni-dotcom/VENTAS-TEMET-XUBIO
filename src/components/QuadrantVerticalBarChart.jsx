@@ -27,7 +27,7 @@ export default function QuadrantVerticalBarChart({ productsList, maxProduct }) {
     labels: productsList.map((p, idx) => labels[idx] || `P${idx + 1}`),
     datasets: [
       {
-        label: 'Sales Performance',
+        label: 'Rendimiento de Ventas',
         data: productsList.map(p => p.totalSales),
         backgroundColor: productsList.map(p => 
           maxProduct && p.name === maxProduct.name ? '#f43f5e' : '#06b6d4'
@@ -86,7 +86,7 @@ export default function QuadrantVerticalBarChart({ productsList, maxProduct }) {
     <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col h-full">
       <div className="border-b border-slate-800 pb-3 mb-4 flex items-center justify-between">
         <h2 className="text-base font-bold text-slate-100 tracking-wide">
-          Sales performance
+          Rendimiento de Ventas
         </h2>
         <span className="text-[11px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/20">
           Vertical
