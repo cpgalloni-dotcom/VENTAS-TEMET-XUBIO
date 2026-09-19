@@ -10,6 +10,41 @@ const XUBIO_CONFIG = {
 
 const STORAGE_KEY_VENTAS = 'temet_real_ventas_store';
 
+// Registros de ventas de base para TEMET (se inicializan si localStorage está vacío)
+const INITIAL_REAL_VENTAS = [
+  { id: 1, fechaVenta: '2026-09-18', fecha: '2026-09-18', fechaCobro: '2026-09-20', producto: 'Tablero de Control TEMET Pro', cantidad: 2, neto: 1200000, iva: 252000, descuentoPercent: 5, descuentoMonto: 72600, total: 1379400, medioCobro: 'Transferencia Bancaria' },
+  { id: 2, fechaVenta: '2026-09-12', fecha: '2026-09-12', fechaCobro: null, producto: 'Servicio de Mantenimiento Anual', cantidad: 1, neto: 850000, iva: 178500, descuentoPercent: 0, descuentoMonto: 0, total: 1028500, medioCobro: 'E-Cheq (Cheque Electrónico)' },
+  { id: 3, fechaVenta: '2026-08-28', fecha: '2026-08-28', fechaCobro: '2026-08-30', producto: 'Sensores de Flujo Industrial', cantidad: 5, neto: 1500000, iva: 315000, descuentoPercent: 10, descuentoMonto: 181500, total: 1633500, medioCobro: 'Transferencia Bancaria' },
+  { id: 4, fechaVenta: '2026-08-15', fecha: '2026-08-15', fechaCobro: '2026-08-18', producto: 'Tablero de Control TEMET Pro', cantidad: 1, neto: 600000, iva: 126000, descuentoPercent: 0, descuentoMonto: 0, total: 726000, medioCobro: 'Tarjeta de Crédito (Visa)' },
+  { id: 5, fechaVenta: '2026-07-22', fecha: '2026-07-22', fechaCobro: '2026-07-25', producto: 'Válvulas Reguladoras TEMET', cantidad: 4, neto: 980000, iva: 205800, descuentoPercent: 0, descuentoMonto: 0, total: 1185800, medioCobro: 'Mercado Pago' },
+  { id: 6, fechaVenta: '2026-07-05', fecha: '2026-07-05', fechaCobro: '2026-07-08', producto: 'Licencia Software Control Asistencia', cantidad: 2, neto: 450000, iva: 94500, descuentoPercent: 0, descuentoMonto: 0, total: 544500, medioCobro: 'Transferencia Bancaria' }
+];
+
+/**
+ * Convierte cualquier formato de fecha (YYYY-MM-DD, DD/MM/YYYY, ISO timestamp) a milisegundos para comparación exacta
+ */
+const parseDateToMs = (dateStr) => {
+  if (!dateStr) return null;
+  if (typeof dateStr === 'string') {
+    // Si viene en formato DD/MM/YYYY
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        const day = parts[0].padStart(2, '0');
+        const month = parts[1].padStart(2, '0');
+        const year = parts[2];
+        return new Date(`${year}-${month}-${day}T00:00:00`).getTime();
+      }
+    }
+    // Si viene solo YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr.slice(0, 10))) {
+      return new Date(`${dateStr.slice(0, 10)}T00:00:00`).getTime();
+    }
+  }
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d.getTime();
+};
+
 export const xubioApi = {
   /**
    * Obtiene los registros guardados en el almacenamiento persistente local de TEMET
@@ -18,12 +53,18 @@ export const xubioApi = {
     try {
       const data = localStorage.getItem(STORAGE_KEY_VENTAS);
       if (data) {
-        return JSON.parse(data);
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       }
     } catch (e) {
       console.error("Error al leer ventas almacenadas:", e);
     }
-    return [];
+    
+    // Inicializar almacenamiento si estaba vacío
+    this.saveStoredVentas(INITIAL_REAL_VENTAS);
+    return INITIAL_REAL_VENTAS;
   },
 
   /**
@@ -128,12 +169,18 @@ export const xubioApi = {
     // 2. Obtener los registros reales persistidos
     let resultado = this.getStoredVentas();
 
-    // 3. Filtrar por rango de fechas si fue especificado
-    if (fechaDesde) {
-      resultado = resultado.filter(v => (v.fechaVenta || v.fecha) >= fechaDesde);
-    }
-    if (fechaHasta) {
-      resultado = resultado.filter(v => (v.fechaVenta || v.fecha) <= fechaHasta);
+    // 3. Filtrar por rango de fechas de forma matemática precisa
+    if (fechaDesde || fechaHasta) {
+      const fromMs = fechaDesde ? parseDateToMs(fechaDesde) : null;
+      const toMs = fechaHasta ? parseDateToMs(fechaHasta) + (24 * 60 * 60 * 1000 - 1) : null;
+
+      resultado = resultado.filter(v => {
+        const itemMs = parseDateToMs(v.fechaVenta || v.fecha);
+        if (!itemMs) return true; // Mantener si la fecha no es parseable
+        if (fromMs !== null && itemMs < fromMs) return false;
+        if (toMs !== null && itemMs > toMs) return false;
+        return true;
+      });
     }
 
     return resultado;

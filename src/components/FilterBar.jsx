@@ -7,10 +7,11 @@ export default function FilterBar({ fechaDesde, fechaHasta, setFechaDesde, setFe
     const today = new Date();
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, '0');
+    const lastDay = new Date(year, today.getMonth() + 1, 0).getDate();
 
     if (type === 'month') {
       setFechaDesde(`${year}-${month}-01`);
-      setFechaHasta(`${year}-${month}-30`);
+      setFechaHasta(`${year}-${month}-${String(lastDay).padStart(2, '0')}`);
     } else if (type === 'q3') {
       setFechaDesde(`${year}-07-01`);
       setFechaHasta(`${year}-09-30`);
