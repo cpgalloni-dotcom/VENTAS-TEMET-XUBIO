@@ -97,9 +97,6 @@ export default function FilterBar({ fechaDesde, fechaHasta, setFechaDesde, setFe
     } else if (type === 'q3') {
       setFechaDesde(`${year}-07-01`);
       setFechaHasta(`${year}-09-30`);
-    } else if (type === 'all') {
-      setFechaDesde('');
-      setFechaHasta('');
     }
   };
 
@@ -140,12 +137,6 @@ export default function FilterBar({ fechaDesde, fechaHasta, setFechaDesde, setFe
               className="px-2.5 py-1.5 text-xs rounded bg-slate-700/60 hover:bg-slate-700 text-slate-200 font-medium transition-colors"
             >
               Trimestre 3
-            </button>
-            <button
-              onClick={() => setPresetPeriod('all')}
-              className="px-2.5 py-1.5 text-xs rounded bg-slate-700/60 hover:bg-slate-700 text-slate-200 font-medium transition-colors"
-            >
-              Todo
             </button>
           </div>
 
