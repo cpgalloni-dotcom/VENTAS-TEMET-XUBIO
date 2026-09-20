@@ -9,7 +9,7 @@ const XUBIO_CONFIG = {
   clientSecret: 'AMho3q0l5qwNhYpZVCAzi7sBiBnHLf4_n'
 };
 
-const STORAGE_KEY_VENTAS = 'temet_real_ventas_store_v8';
+const STORAGE_KEY_VENTAS = 'temet_real_ventas_store_v9';
 
 // Comprobantes exactos de Septiembre 2026 exportados directamente de Xubio (28 Registros)
 const SEPTIEMBRE_REAL_VENTAS = [
@@ -44,7 +44,7 @@ const SEPTIEMBRE_REAL_VENTAS = [
 ];
 
 /**
- * Generador automático de datos de ventas reales para TODOS los meses del año 2026 y 2025
+ * Generador automático de datos de ventas para cada mes del año
  */
 const generateMonthData = (yearNum, monthNum) => {
   const y = parseInt(yearNum, 10);
@@ -81,7 +81,6 @@ const generateMonthData = (yearNum, monthNum) => {
   let compA = 700 + (m * 25);
   let compB = 400 + (m * 12);
 
-  // Generar entre 15 y 25 facturas bien distribuidas a lo largo de cada día del mes
   for (let d = 1; d <= numDays; d += 2) {
     const dayStr = String(d).padStart(2, '0');
     const fecha = `${y}-${monthPadded}-${dayStr}`;
@@ -120,9 +119,6 @@ const generateMonthData = (yearNum, monthNum) => {
   return result;
 };
 
-/**
- * Pre-construye el dataset completo para TODOS los 12 meses de 2026 (y 2025)
- */
 const buildFullDataset = () => {
   let allVentas = [];
   const years = [2026, 2025];
@@ -130,7 +126,6 @@ const buildFullDataset = () => {
   for (const year of years) {
     for (let month = 1; month <= 12; month++) {
       if (year === 2026 && month === 9) {
-        // Para Septiembre 2026 se utilizan los 28 comprobantes reales exportados de Xubio
         allVentas = [...allVentas, ...SEPTIEMBRE_REAL_VENTAS];
       } else {
         const monthVentas = generateMonthData(year, month);
@@ -144,9 +139,6 @@ const buildFullDataset = () => {
 
 const INITIAL_FULL_DATASET = buildFullDataset();
 
-/**
- * Normaliza cualquier formato de fecha a 'YYYY-MM-DD' para comparación directa de strings
- */
 const normalizeToIsoDate = (str) => {
   if (!str) return '';
   if (typeof str !== 'string') {
@@ -157,12 +149,10 @@ const normalizeToIsoDate = (str) => {
     }
   }
   const clean = str.trim();
-  // Formato DD/MM/YYYY o DD-MM-YYYY
   if (/^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/.test(clean)) {
     const [d, m, y] = clean.split(/[\/\-]/);
     return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
   }
-  // Formato YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}/.test(clean)) {
     return clean.slice(0, 10);
   }
@@ -191,19 +181,23 @@ export const xubioApi = {
     return XUBIO_CONFIG.clientSecret;
   },
 
+  /**
+   * Obtiene las ventas de localStorage. Si la clave fue creada y es [] (eliminada por el usuario), devuelve [] estrictamente.
+   */
   getStoredVentas() {
     try {
       const data = localStorage.getItem(STORAGE_KEY_VENTAS);
       if (data !== null) {
         const parsed = JSON.parse(data);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed; // Devuelve exactamente lo que hay, incluso si es [] (vacio/eliminado)
         }
       }
     } catch (e) {
       console.error("Error al leer ventas de Xubio:", e);
     }
     
+    // Solo si el almacenamiento NUNCA fue creado anteriormente en esta máquina
     this.saveStoredVentas(INITIAL_FULL_DATASET);
     return INITIAL_FULL_DATASET;
   },
@@ -216,6 +210,9 @@ export const xubioApi = {
     }
   },
 
+  /**
+   * Elimina PERMANENTEMENTE todos los datos de ventas del sistema
+   */
   clearAllVentas() {
     try {
       localStorage.setItem(STORAGE_KEY_VENTAS, JSON.stringify([]));
@@ -223,6 +220,14 @@ export const xubioApi = {
       console.error("Error al vaciar ventas:", e);
     }
     return [];
+  },
+
+  /**
+   * Restablece la base de datos inicial completa de Xubio
+   */
+  restoreInitialDataset() {
+    this.saveStoredVentas(INITIAL_FULL_DATASET);
+    return INITIAL_FULL_DATASET;
   },
 
   addVenta(nuevaVenta) {
@@ -304,10 +309,15 @@ export const xubioApi = {
       }
     }
 
-    // 2. Obtener dataset completo (Enero a Diciembre)
+    // 2. Obtener dataset almacenado
     let resultado = this.getStoredVentas();
 
-    // 3. Filtrar matemáticamente por comparación estricta de cadenas ISO YYYY-MM-DD sin errores de zona horaria
+    // SI EL USUARIO ELIMINÓ TODO ([]), SE RESPETA ESTRICTAMENTE Y NO SE RE-POPULA NADA
+    if (!resultado || resultado.length === 0) {
+      return [];
+    }
+
+    // 3. Filtrar por comparación estricta de cadenas ISO YYYY-MM-DD
     if (normDesde || normHasta) {
       resultado = resultado.filter(v => {
         const vDate = normalizeToIsoDate(v.fechaVenta || v.fecha);

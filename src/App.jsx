@@ -15,7 +15,7 @@ import { xubioApi } from './services/xubioApi';
 import { processSalesData } from './utils/analytics';
 import { AlertTriangle } from 'lucide-react';
 
-const USER_CLIENT_SECRET = 'AMho3q0l5qwNhYpZVCAzi7sBiBnHLf4_nnFzWI6jF0yHw3k8yBgkX-kEy_wzt2VPhCgovLCfggp1F_8agRqluRQtwa-B7Uwl78*9yOriXAMho3q0l5qwNhYpZVCAzi7sBiBn';
+const USER_CLIENT_SECRET = 'AMho3q0l5qwNhYpZVCAzi7sBiBnHLf4_n';
 
 export default function App() {
   const [token, setToken] = useState(() => localStorage.getItem('temet_xubio_token') || USER_CLIENT_SECRET);
@@ -62,10 +62,15 @@ export default function App() {
   };
 
   const handleClearAllSales = () => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar TODOS los datos de ventas cargados en el sistema?')) {
+    if (window.confirm('¿Estás seguro de que deseas eliminar TOTALMENTE todas las ventas cargadas en el sistema?')) {
       const vacias = xubioApi.clearAllVentas();
       setTransactions(vacias);
     }
+  };
+
+  const handleRestoreInitialData = () => {
+    const restauradas = xubioApi.restoreInitialDataset();
+    setTransactions(restauradas);
   };
 
   const handleDeleteSale = (id) => {
@@ -154,10 +159,11 @@ export default function App() {
 
         </div>
 
-        {/* Detailed Transactions List with Clear All Sales Option and Xubio Import */}
+        {/* Detailed Transactions List with Clear All Sales Option and Restore */}
         <TransactionsTable 
           transactions={transactions} 
           onClearAllSales={handleClearAllSales}
+          onRestoreData={handleRestoreInitialData}
           onDeleteSale={handleDeleteSale}
           onImportXubioData={handleImportXubioData}
         />

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Search, Download, FileSpreadsheet, FileText, CreditCard, Building2, Banknote, Landmark, Wallet, Clock, CalendarCheck, Trash2 } from 'lucide-react';
+import { Search, Download, FileSpreadsheet, FileText, CreditCard, Building2, Banknote, Landmark, Wallet, Clock, CalendarCheck, Trash2, RotateCcw } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { formatCurrency } from '../utils/analytics';
 
-export default function TransactionsTable({ transactions = [], onClearAllSales, onDeleteSale }) {
+export default function TransactionsTable({ transactions = [], onClearAllSales, onRestoreData, onDeleteSale }) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredTransactions = transactions.filter(tx => {
@@ -164,10 +164,22 @@ export default function TransactionsTable({ transactions = [], onClearAllSales, 
             <button
               onClick={onClearAllSales}
               className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white transition-colors shadow-md shadow-rose-600/20"
-              title="Eliminar todos los datos de ventas cargados en el sistema"
+              title="Eliminar totalmente todos los datos de ventas del sistema"
             >
               <Trash2 className="w-4 h-4" />
               <span>Eliminar</span>
+            </button>
+          )}
+
+          {/* Botón Restablecer Datos Iniciales */}
+          {onRestoreData && transactions.length === 0 && (
+            <button
+              onClick={onRestoreData}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition-colors shadow-md shadow-cyan-600/20"
+              title="Restablecer base de datos inicial de Xubio"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span>Restablecer Datos Xubio</span>
             </button>
           )}
 
@@ -226,7 +238,18 @@ export default function TransactionsTable({ transactions = [], onClearAllSales, 
             {filteredTransactions.length === 0 ? (
               <tr>
                 <td colSpan={onDeleteSale ? "10" : "9"} className="py-8 text-center text-slate-500 italic">
-                  No se encontraron transacciones registradas.
+                  <div className="flex flex-col items-center justify-center space-y-2">
+                    <p>No se encontraron transacciones registradas.</p>
+                    {onRestoreData && (
+                      <button
+                        onClick={onRestoreData}
+                        className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-600/20 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-600/30 transition-colors"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Cargar / Restablecer Base de Datos Xubio</span>
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ) : (
