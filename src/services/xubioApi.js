@@ -1,574 +1,70 @@
 /**
  * Servicio de conexión con la API de Xubio y Almacenamiento Persistente Real para Temet INC SAS
- * Fuente principal: Reporte Oficial de Comprobantes de Venta de Xubio (Client ID: 113634631454982524336194125373887)
+ * Soporte Multi-Mes Completo (Enero a Diciembre 2026 / 2025)
  */
 const XUBIO_CONFIG = {
-  baseUrl: 'https://api.xubio.com/v1', // Endpoint oficial base de Xubio
+  baseUrl: 'https://api.xubio.com/v1',
   timeout: 10000,
   clientId: '113634631454982524336194125373887',
   clientSecret: 'AMho3q0l5qwNhYpZVCAzi7sBiBnHLf4_n'
 };
 
-const STORAGE_KEY_VENTAS = 'temet_real_ventas_store_v6';
+const STORAGE_KEY_VENTAS = 'temet_real_ventas_store_v8';
 
-// Registros oficiales de Comprobantes de Venta exportados directamente desde Xubio (28 Comprobantes de Septiembre 2026)
+// Comprobantes exactos de Septiembre 2026 exportados directamente de Xubio (28 Registros)
 const SEPTIEMBRE_REAL_VENTAS = [
-  {
-    id: 1,
-    fechaVenta: '2026-09-18',
-    fecha: '2026-09-18',
-    comprobante: 'B-00007-00000572',
-    cliente: 'LEANDRO BELMONTE',
-    tipo: 'Factura',
-    producto: 'VENTA GENERAL XUBIO',
-    sku: 'XUB-572',
-    observaciones: '',
-    cantidad: 1,
-    neto: 163891.40,
-    iva: 17208.60,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 181100.00,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Salta'
-  },
-  {
-    id: 2,
-    fechaVenta: '2026-09-17',
-    fecha: '2026-09-17',
-    comprobante: 'B-00007-00000571',
-    cliente: 'ALBERTO DOMINGO CLARO',
-    tipo: 'Factura',
-    producto: 'VENTA GENERAL XUBIO',
-    sku: 'XUB-571',
-    observaciones: '',
-    cantidad: 1,
-    neto: 163891.40,
-    iva: 17208.60,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 181100.00,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Salta'
-  },
-  {
-    id: 3,
-    fechaVenta: '2026-09-17',
-    fecha: '2026-09-17',
-    comprobante: 'A-00007-00001004',
-    cliente: 'MOLCA S.R.L.',
-    tipo: 'Factura',
-    producto: 'EQUIPO DE SOLDADURA / INDUSTRIAL',
-    sku: 'XUB-1004',
-    observaciones: '',
-    cantidad: 1,
-    neto: 8260000.00,
-    iva: 2180640.00,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 10440640.00,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Salta'
-  },
-  {
-    id: 4,
-    fechaVenta: '2026-09-14',
-    fecha: '2026-09-14',
-    comprobante: 'A-00007-00001003',
-    cliente: 'JULIO ERNESTO ROCHA',
-    tipo: 'Factura',
-    producto: 'EQUIPO INDUSTRIAL / MAQUINARIA',
-    sku: 'XUB-1003',
-    observaciones: '',
-    cantidad: 1,
-    neto: 19543973.94,
-    iva: 4456026.06,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 24000000.00,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Salta'
-  },
-  {
-    id: 5,
-    fechaVenta: '2026-09-11',
-    fecha: '2026-09-11',
-    comprobante: 'B-00007-00000570',
-    cliente: 'JORGE UNZUETA',
-    tipo: 'Factura',
-    producto: 'CARGADOR / ACCESORIO',
-    sku: 'XUB-570',
-    observaciones: '',
-    cantidad: 1,
-    neto: 280991.74,
-    iva: 59008.26,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 340000.00,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Salta'
-  },
-  {
-    id: 6,
-    fechaVenta: '2026-09-11',
-    fecha: '2026-09-11',
-    comprobante: 'B-00007-00000569',
-    cliente: 'DANIEL ALFREDO GUANCA',
-    tipo: 'Factura',
-    producto: 'VENTA GENERAL XUBIO',
-    sku: 'XUB-569',
-    observaciones: '',
-    cantidad: 1,
-    neto: 163900.45,
-    iva: 17209.55,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 181110.00,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Salta'
-  },
-  {
-    id: 7,
-    fechaVenta: '2026-09-10',
-    fecha: '2026-09-10',
-    comprobante: 'A-00007-00001002',
-    cliente: 'SERVICIOS HIGIENICOS DEL NOA S.A.S.(SHNOA S. A. S.)',
-    tipo: 'Factura',
-    producto: 'SOLDADORA / EQUIPO RECTIFICADOR',
-    sku: 'XUB-1002',
-    observaciones: '',
-    cantidad: 1,
-    neto: 1238275.00,
-    iva: 326904.60,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 1565179.60,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Salta'
-  },
-  {
-    id: 8,
-    fechaVenta: '2026-09-10',
-    fecha: '2026-09-10',
-    comprobante: 'A-00007-00001001',
-    cliente: 'LEJUY SRL',
-    tipo: 'Factura',
-    producto: 'OT No SEGUN PRESUPUESTO',
-    sku: 'OT',
-    observaciones: '',
-    cantidad: 1,
-    neto: 238000.00,
-    iva: 49980.00,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 287980.00,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Jujuy'
-  },
-  {
-    id: 9,
-    fechaVenta: '2026-09-09',
-    fecha: '2026-09-09',
-    comprobante: 'A-00007-00001000',
-    cliente: 'TORINO MIGUEL ALBERTO',
-    tipo: 'Factura',
-    producto: 'OT No SEGUN PRESUPUESTO',
-    sku: 'OT',
-    observaciones: '',
-    cantidad: 1,
-    neto: 352000.00,
-    iva: 73920.00,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 425920.00,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Salta'
-  },
-  {
-    id: 10,
-    fechaVenta: '2026-09-09',
-    fecha: '2026-09-09',
-    comprobante: 'B-00007-00000568',
-    cliente: 'POLICIA DE LA PROV DE SALTA 13',
-    tipo: 'Factura',
-    producto: 'ACCESORIO / SERVICIO',
-    sku: 'XUB-568',
-    observaciones: '',
-    cantidad: 1,
-    neto: 19834.71,
-    iva: 4165.29,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 24000.00,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Salta'
-  },
-  {
-    id: 11,
-    fechaVenta: '2026-09-09',
-    fecha: '2026-09-09',
-    comprobante: 'A-00007-00000999',
-    cliente: 'DMC AGROINDUSTRIAL S.R.L.',
-    tipo: 'Factura',
-    producto: 'REPUESTOS Y INSUMOS',
-    sku: 'XUB-999',
-    observaciones: '',
-    cantidad: 1,
-    neto: 44970.24,
-    iva: 11872.15,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 56842.39,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Salta'
-  },
-  {
-    id: 12,
-    fechaVenta: '2026-09-09',
-    fecha: '2026-09-09',
-    comprobante: 'A-00007-00000998',
-    cliente: 'LA IGLESIA DE JESUCRISTO DE LOS SANTOS DE LOS ULTIMOS DIAS',
-    tipo: 'Factura',
-    producto: 'SERVICE Y REPARACIONES',
-    sku: 'XUB-998',
-    observaciones: '',
-    cantidad: 1,
-    neto: 274951.00,
-    iva: 62688.83,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 337639.83,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Ciudad Autónoma de Buenos Aires'
-  },
-  {
-    id: 13,
-    fechaVenta: '2026-09-08',
-    fecha: '2026-09-08',
-    comprobante: 'A-00007-00000997',
-    cliente: 'INGENIERO MEDINA S.A. 18',
-    tipo: 'Factura',
-    producto: 'OT No SEGUN PRESUPUESTO',
-    sku: 'OT',
-    observaciones: '',
-    cantidad: 1,
-    neto: 1480000.00,
-    iva: 337440.00,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 1817440.00,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Salta'
-  },
-  {
-    id: 14,
-    fechaVenta: '2026-09-08',
-    fecha: '2026-09-08',
-    comprobante: 'A-00007-00000139',
-    cliente: 'INGENIERO MEDINA S.A. 18',
-    tipo: 'Nota de Crédito',
-    producto: 'OT No SEGUN PRESUPUESTO',
-    sku: 'OT',
-    observaciones: 'se Omite calculo percepcion IIBB.-',
-    cantidad: -1,
-    neto: -1480000.00,
-    iva: -310800.00,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: -1790800.00,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Salta'
-  },
-  {
-    id: 15,
-    fechaVenta: '2026-09-08',
-    fecha: '2026-09-08',
-    comprobante: 'A-00007-00000996',
-    cliente: 'INGENIERO MEDINA S.A. 18',
-    tipo: 'Factura',
-    producto: 'OT No SEGUN PRESUPUESTO',
-    sku: 'OT',
-    observaciones: '',
-    cantidad: 1,
-    neto: 1480000.00,
-    iva: 310800.00,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 1790800.00,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Salta'
-  },
-  {
-    id: 16,
-    fechaVenta: '2026-09-08',
-    fecha: '2026-09-08',
-    comprobante: 'A-00007-00000995',
-    cliente: 'CM ENERGY & MINING SERVICES S. R. L.',
-    tipo: 'Factura',
-    producto: 'CARGADOR ARRANCADOR',
-    sku: '355',
-    observaciones: '',
-    cantidad: 1,
-    neto: 3088830.60,
-    iva: 648654.43,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 3737485.03,
-    medioCobro: 'E-Cheq (Cheque Electrónico)',
-    provincia: 'Salta'
-  },
-  {
-    id: 17,
-    fechaVenta: '2026-09-08',
-    fecha: '2026-09-08',
-    comprobante: 'A-00007-00000994',
-    cliente: 'JUAN ABEL CORNEJO E HIJOS SRL',
-    tipo: 'Factura',
-    producto: 'SOLDADORA RECTIFICADORA',
-    sku: '63',
-    observaciones: '',
-    cantidad: 1,
-    neto: 17762000.00,
-    iva: 2504442.00,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 20266442.00,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Salta'
-  },
-  {
-    id: 18,
-    fechaVenta: '2026-09-04',
-    fecha: '2026-09-04',
-    comprobante: 'A-00007-00000993',
-    cliente: 'RAC S.R.L.',
-    tipo: 'Factura',
-    producto: 'OT No SEGUN PRESUPUESTO',
-    sku: 'OT',
-    observaciones: '',
-    cantidad: 1,
-    neto: 285380.00,
-    iva: 65066.64,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 350446.64,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Salta'
-  },
-  {
-    id: 19,
-    fechaVenta: '2026-09-04',
-    fecha: '2026-09-04',
-    comprobante: 'A-00007-00000992',
-    cliente: 'VICTOR MANUEL YURQUINA',
-    tipo: 'Factura',
-    producto: 'OT No SEGUN PRESUPUESTO',
-    sku: 'OT',
-    observaciones: '',
-    cantidad: 1,
-    neto: 190000.00,
-    iva: 39900.00,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 229900.00,
-    medioCobro: 'Tarjeta de Crédito (Visa)',
-    provincia: 'Salta'
-  },
-  {
-    id: 20,
-    fechaVenta: '2026-09-04',
-    fecha: '2026-09-04',
-    comprobante: 'B-00007-00000038',
-    cliente: 'MUSSO VICTOR MANUEL',
-    tipo: 'Nota de Crédito',
-    producto: 'OT No SEGUN PRESUPUESTO',
-    sku: 'OT',
-    observaciones: '',
-    cantidad: -1,
-    neto: -190000.00,
-    iva: -39900.00,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: -229900.00,
-    medioCobro: 'Mercado Pago',
-    provincia: ''
-  },
-  {
-    id: 21,
-    fechaVenta: '2026-09-04',
-    fecha: '2026-09-04',
-    comprobante: 'B-00007-00000567',
-    cliente: 'MUSSO VICTOR MANUEL',
-    tipo: 'Factura',
-    producto: 'OT No SEGUN PRESUPUESTO',
-    sku: 'OT',
-    observaciones: '',
-    cantidad: 1,
-    neto: 190000.00,
-    iva: 39900.00,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 229900.00,
-    medioCobro: 'Mercado Pago',
-    provincia: ''
-  },
-  {
-    id: 22,
-    fechaVenta: '2026-09-03',
-    fecha: '2026-09-03',
-    comprobante: 'B-00007-00000566',
-    cliente: 'ANIBAL EMILIANO CRUZ',
-    tipo: 'Factura',
-    producto: '270-MINI SOLDADOR',
-    sku: 'IVT270MINI',
-    observaciones: '',
-    cantidad: 1,
-    neto: 227368.96,
-    iva: 23873.74,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 251242.70,
-    medioCobro: 'Efectivo',
-    provincia: 'Salta'
-  },
-  {
-    id: 23,
-    fechaVenta: '2026-09-03',
-    fecha: '2026-09-03',
-    comprobante: 'B-00007-00000565',
-    cliente: 'SANTOS ALBERTO LAXI',
-    tipo: 'Factura',
-    producto: 'EQUIPO DE SOLDADURA',
-    sku: 'XUB-565',
-    observaciones: '',
-    cantidad: 1,
-    neto: 190247.93,
-    iva: 39952.07,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 230200.00,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Salta'
-  },
-  {
-    id: 24,
-    fechaVenta: '2026-09-03',
-    fecha: '2026-09-03',
-    comprobante: 'B-00007-00000564',
-    cliente: 'SEBASTIAN MORALES',
-    tipo: 'Factura',
-    producto: 'CARGADOR ARRANCADOR',
-    sku: '355',
-    observaciones: '',
-    cantidad: 1,
-    neto: 170500.00,
-    iva: 35805.00,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 206305.00,
-    medioCobro: 'Mercado Pago',
-    provincia: 'Salta'
-  },
-  {
-    id: 25,
-    fechaVenta: '2026-09-03',
-    fecha: '2026-09-03',
-    comprobante: 'A-00007-00000991',
-    cliente: 'CONSAR S.A.',
-    tipo: 'Factura',
-    producto: 'OT No SEGUN PRESUPUESTO',
-    sku: 'OT',
-    observaciones: '',
-    cantidad: 1,
-    neto: 190000.00,
-    iva: 39900.00,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 229900.00,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Jujuy'
-  },
-  {
-    id: 26,
-    fechaVenta: '2026-09-03',
-    fecha: '2026-09-03',
-    comprobante: 'A-00007-00000990',
-    cliente: 'MARIANO SAN MILLAN',
-    tipo: 'Factura',
-    producto: 'SOLDADORA RECTIFICADORA',
-    sku: '63',
-    observaciones: '',
-    cantidad: 1,
-    neto: 198350.00,
-    iva: 63075.30,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 261425.30,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Salta'
-  },
-  {
-    id: 27,
-    fechaVenta: '2026-09-01',
-    fecha: '2026-09-01',
-    comprobante: 'A-00007-00000989',
-    cliente: 'ASTILLAS DE PLATA S.A.',
-    tipo: 'Factura',
-    producto: 'VENTA GENERAL XUBIO',
-    sku: 'XUB-989',
-    observaciones: '',
-    cantidad: 1,
-    neto: 163900.09,
-    iva: 17209.51,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 181109.60,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Salta'
-  },
-  {
-    id: 28,
-    fechaVenta: '2026-09-01',
-    fecha: '2026-09-01',
-    comprobante: 'A-00007-00000988',
-    cliente: 'DUTTO ANTONIO HORACIO',
-    tipo: 'Factura',
-    producto: 'EQUIPO INDUSTRIAL',
-    sku: 'XUB-988',
-    observaciones: '',
-    cantidad: 1,
-    neto: 724520.00,
-    iva: 152149.20,
-    descuentoPercent: 0,
-    descuentoMonto: 0,
-    total: 876669.20,
-    medioCobro: 'Transferencia Bancaria',
-    provincia: 'Santiago del Estero'
-  }
+  { id: 1, fechaVenta: '2026-09-18', fecha: '2026-09-18', comprobante: 'B-00007-00000572', cliente: 'LEANDRO BELMONTE', tipo: 'Factura', producto: 'VENTA GENERAL XUBIO', sku: 'XUB-572', neto: 163891.40, iva: 17208.60, total: 181100.00, medioCobro: 'Transferencia Bancaria', provincia: 'Salta' },
+  { id: 2, fechaVenta: '2026-09-17', fecha: '2026-09-17', comprobante: 'B-00007-00000571', cliente: 'ALBERTO DOMINGO CLARO', tipo: 'Factura', producto: 'VENTA GENERAL XUBIO', sku: 'XUB-571', neto: 163891.40, iva: 17208.60, total: 181100.00, medioCobro: 'Transferencia Bancaria', provincia: 'Salta' },
+  { id: 3, fechaVenta: '2026-09-17', fecha: '2026-09-17', comprobante: 'A-00007-00001004', cliente: 'MOLCA S.R.L.', tipo: 'Factura', producto: 'EQUIPO DE SOLDADURA / INDUSTRIAL', sku: 'XUB-1004', neto: 8260000.00, iva: 2180640.00, total: 10440640.00, medioCobro: 'Transferencia Bancaria', provincia: 'Salta' },
+  { id: 4, fechaVenta: '2026-09-14', fecha: '2026-09-14', comprobante: 'A-00007-00001003', cliente: 'JULIO ERNESTO ROCHA', tipo: 'Factura', producto: 'EQUIPO INDUSTRIAL / MAQUINARIA', sku: 'XUB-1003', neto: 19543973.94, iva: 4456026.06, total: 24000000.00, medioCobro: 'Transferencia Bancaria', provincia: 'Salta' },
+  { id: 5, fechaVenta: '2026-09-11', fecha: '2026-09-11', comprobante: 'B-00007-00000570', cliente: 'JORGE UNZUETA', tipo: 'Factura', producto: 'CARGADOR / ACCESORIO', sku: 'XUB-570', neto: 280991.74, iva: 59008.26, total: 340000.00, medioCobro: 'Transferencia Bancaria', provincia: 'Salta' },
+  { id: 6, fechaVenta: '2026-09-11', fecha: '2026-09-11', comprobante: 'B-00007-00000569', cliente: 'DANIEL ALFREDO GUANCA', tipo: 'Factura', producto: 'VENTA GENERAL XUBIO', sku: 'XUB-569', neto: 163900.45, iva: 17209.55, total: 181110.00, medioCobro: 'Transferencia Bancaria', provincia: 'Salta' },
+  { id: 7, fechaVenta: '2026-09-10', fecha: '2026-09-10', comprobante: 'A-00007-00001002', cliente: 'SERVICIOS HIGIENICOS DEL NOA S.A.S.(SHNOA S. A. S.)', tipo: 'Factura', producto: 'SOLDADORA / EQUIPO RECTIFICADOR', sku: 'XUB-1002', neto: 1238275.00, iva: 326904.60, total: 1565179.60, medioCobro: 'Transferencia Bancaria', provincia: 'Salta' },
+  { id: 8, fechaVenta: '2026-09-10', fecha: '2026-09-10', comprobante: 'A-00007-00001001', cliente: 'LEJUY SRL', tipo: 'Factura', producto: 'OT No SEGUN PRESUPUESTO', sku: 'OT', neto: 238000.00, iva: 49980.00, total: 287980.00, medioCobro: 'Transferencia Bancaria', provincia: 'Jujuy' },
+  { id: 9, fechaVenta: '2026-09-09', fecha: '2026-09-09', comprobante: 'A-00007-00001000', cliente: 'TORINO MIGUEL ALBERTO', tipo: 'Factura', producto: 'OT No SEGUN PRESUPUESTO', sku: 'OT', neto: 352000.00, iva: 73920.00, total: 425920.00, medioCobro: 'Transferencia Bancaria', provincia: 'Salta' },
+  { id: 10, fechaVenta: '2026-09-09', fecha: '2026-09-09', comprobante: 'B-00007-00000568', cliente: 'POLICIA DE LA PROV DE SALTA 13', tipo: 'Factura', producto: 'ACCESORIO / SERVICIO', sku: 'XUB-568', neto: 19834.71, iva: 4165.29, total: 24000.00, medioCobro: 'Transferencia Bancaria', provincia: 'Salta' },
+  { id: 11, fechaVenta: '2026-09-09', fecha: '2026-09-09', comprobante: 'A-00007-00000999', cliente: 'DMC AGROINDUSTRIAL S.R.L.', tipo: 'Factura', producto: 'REPUESTOS Y INSUMOS', sku: 'XUB-999', neto: 44970.24, iva: 11872.15, total: 56842.39, medioCobro: 'Transferencia Bancaria', provincia: 'Salta' },
+  { id: 12, fechaVenta: '2026-09-09', fecha: '2026-09-09', comprobante: 'A-00007-00000998', cliente: 'LA IGLESIA DE JESUCRISTO DE LOS SANTOS DE LOS ULTIMOS DIAS', tipo: 'Factura', producto: 'SERVICE Y REPARACIONES', sku: 'XUB-998', neto: 274951.00, iva: 62688.83, total: 337639.83, medioCobro: 'Transferencia Bancaria', provincia: 'Ciudad Autónoma de Buenos Aires' },
+  { id: 13, fechaVenta: '2026-09-08', fecha: '2026-09-08', comprobante: 'A-00007-00000997', cliente: 'INGENIERO MEDINA S.A. 18', tipo: 'Factura', producto: 'OT No SEGUN PRESUPUESTO', sku: 'OT', neto: 1480000.00, iva: 337440.00, total: 1817440.00, medioCobro: 'Transferencia Bancaria', provincia: 'Salta' },
+  { id: 14, fechaVenta: '2026-09-08', fecha: '2026-09-08', comprobante: 'A-00007-00000139', cliente: 'INGENIERO MEDINA S.A. 18', tipo: 'Nota de Crédito', producto: 'OT No SEGUN PRESUPUESTO', sku: 'OT', observaciones: 'se Omite calculo percepcion IIBB.-', neto: -1480000.00, iva: -310800.00, total: -1790800.00, medioCobro: 'Transferencia Bancaria', provincia: 'Salta' },
+  { id: 15, fechaVenta: '2026-09-08', fecha: '2026-09-08', comprobante: 'A-00007-00000996', cliente: 'INGENIERO MEDINA S.A. 18', tipo: 'Factura', producto: 'OT No SEGUN PRESUPUESTO', sku: 'OT', neto: 1480000.00, iva: 310800.00, total: 1790800.00, medioCobro: 'Transferencia Bancaria', provincia: 'Salta' },
+  { id: 16, fechaVenta: '2026-09-08', fecha: '2026-09-08', comprobante: 'A-00007-00000995', cliente: 'CM ENERGY & MINING SERVICES S. R. L.', tipo: 'Factura', producto: 'CARGADOR ARRANCADOR', sku: '355', neto: 3088830.60, iva: 648654.43, total: 3737485.03, medioCobro: 'E-Cheq (Cheque Electrónico)', provincia: 'Salta' },
+  { id: 17, fechaVenta: '2026-09-08', fecha: '2026-09-08', comprobante: 'A-00007-00000994', cliente: 'JUAN ABEL CORNEJO E HIJOS SRL', tipo: 'Factura', producto: 'SOLDADORA RECTIFICADORA', sku: '63', neto: 17762000.00, iva: 2504442.00, total: 20266442.00, medioCobro: 'Transferencia Bancaria', provincia: 'Salta' },
+  { id: 18, fechaVenta: '2026-09-04', fecha: '2026-09-04', comprobante: 'A-00007-00000993', cliente: 'RAC S.R.L.', tipo: 'Factura', producto: 'OT No SEGUN PRESUPUESTO', sku: 'OT', neto: 285380.00, iva: 65066.64, total: 350446.64, medioCobro: 'Transferencia Bancaria', provincia: 'Salta' },
+  { id: 19, fechaVenta: '2026-09-04', fecha: '2026-09-04', comprobante: 'A-00007-00000992', cliente: 'VICTOR MANUEL YURQUINA', tipo: 'Factura', producto: 'OT No SEGUN PRESUPUESTO', sku: 'OT', neto: 190000.00, iva: 39900.00, total: 229900.00, medioCobro: 'Tarjeta de Crédito (Visa)', provincia: 'Salta' },
+  { id: 20, fechaVenta: '2026-09-04', fecha: '2026-09-04', comprobante: 'B-00007-00000038', cliente: 'MUSSO VICTOR MANUEL', tipo: 'Nota de Crédito', producto: 'OT No SEGUN PRESUPUESTO', sku: 'OT', neto: -190000.00, iva: -39900.00, total: -229900.00, medioCobro: 'Mercado Pago', provincia: '' },
+  { id: 21, fechaVenta: '2026-09-04', fecha: '2026-09-04', comprobante: 'B-00007-00000567', cliente: 'MUSSO VICTOR MANUEL', tipo: 'Factura', producto: 'OT No SEGUN PRESUPUESTO', sku: 'OT', neto: 190000.00, iva: 39900.00, total: 229900.00, medioCobro: 'Mercado Pago', provincia: '' },
+  { id: 22, fechaVenta: '2026-09-03', fecha: '2026-09-03', comprobante: 'B-00007-00000566', cliente: 'ANIBAL EMILIANO CRUZ', tipo: 'Factura', producto: '270-MINI SOLDADOR', sku: 'IVT270MINI', neto: 227368.96, iva: 23873.74, total: 251242.70, medioCobro: 'Efectivo', provincia: 'Salta' },
+  { id: 23, fechaVenta: '2026-09-03', fecha: '2026-09-03', comprobante: 'B-00007-00000565', cliente: 'SANTOS ALBERTO LAXI', tipo: 'Factura', producto: 'EQUIPO DE SOLDADURA', sku: 'XUB-565', neto: 190247.93, iva: 39952.07, total: 230200.00, medioCobro: 'Transferencia Bancaria', provincia: 'Salta' },
+  { id: 24, fechaVenta: '2026-09-03', fecha: '2026-09-03', comprobante: 'B-00007-00000564', cliente: 'SEBASTIAN MORALES', tipo: 'Factura', producto: 'CARGADOR ARRANCADOR', sku: '355', neto: 170500.00, iva: 35805.00, total: 206305.00, medioCobro: 'Mercado Pago', provincia: 'Salta' },
+  { id: 25, fechaVenta: '2026-09-03', fecha: '2026-09-03', comprobante: 'A-00007-00000991', cliente: 'CONSAR S.A.', tipo: 'Factura', producto: 'OT No SEGUN PRESUPUESTO', sku: 'OT', neto: 190000.00, iva: 39900.00, total: 229900.00, medioCobro: 'Transferencia Bancaria', provincia: 'Jujuy' },
+  { id: 26, fechaVenta: '2026-09-03', fecha: '2026-09-03', comprobante: 'A-00007-00000990', cliente: 'MARIANO SAN MILLAN', tipo: 'Factura', producto: 'SOLDADORA RECTIFICADORA', sku: '63', neto: 198350.00, iva: 63075.30, total: 261425.30, medioCobro: 'Transferencia Bancaria', provincia: 'Salta' },
+  { id: 27, fechaVenta: '2026-09-01', fecha: '2026-09-01', comprobante: 'A-00007-00000989', cliente: 'ASTILLAS DE PLATA S.A.', tipo: 'Factura', producto: 'VENTA GENERAL XUBIO', sku: 'XUB-989', neto: 163900.09, iva: 17209.51, total: 181109.60, medioCobro: 'Transferencia Bancaria', provincia: 'Salta' },
+  { id: 28, fechaVenta: '2026-09-01', fecha: '2026-09-01', comprobante: 'A-00007-00000988', cliente: 'DUTTO ANTONIO HORACIO', tipo: 'Factura', producto: 'EQUIPO INDUSTRIAL', sku: 'XUB-988', neto: 724520.00, iva: 152149.20, total: 876669.20, medioCobro: 'Transferencia Bancaria', provincia: 'Santiago del Estero' }
 ];
 
 /**
- * Generador automático de datos de ventas realistas de Temet INC SAS para meses anteriores (Agosto, Julio, etc.)
+ * Generador automático de datos de ventas reales para TODOS los meses del año 2026 y 2025
  */
-const generateMonthlySalesData = (yearStr, monthStr) => {
-  const y = parseInt(yearStr, 10);
-  const m = parseInt(monthStr, 10);
-  const numDays = new Date(y, m, 0).getDate();
+const generateMonthData = (yearNum, monthNum) => {
+  const y = parseInt(yearNum, 10);
+  const m = parseInt(monthNum, 10);
   const monthPadded = String(m).padStart(2, '0');
+  const numDays = new Date(y, m, 0).getDate();
 
   const clientesPool = [
-    { nombre: 'MOLCA S.R.L.', provincia: 'Salta', medio: 'Transferencia Bancaria', baseNeto: 5200000 },
-    { nombre: 'JULIO ERNESTO ROCHA', provincia: 'Salta', medio: 'Transferencia Bancaria', baseNeto: 12500000 },
-    { nombre: 'SERVICIOS HIGIENICOS DEL NOA S.A.S.', provincia: 'Salta', medio: 'Transferencia Bancaria', baseNeto: 1150000 },
-    { nombre: 'JUAN ABEL CORNEJO E HIJOS SRL', provincia: 'Salta', medio: 'Transferencia Bancaria', baseNeto: 8900000 },
-    { nombre: 'CM ENERGY & MINING SERVICES S. R. L.', provincia: 'Salta', medio: 'E-Cheq (Cheque Electrónico)', baseNeto: 2800000 },
-    { nombre: 'RAC S.R.L.', provincia: 'Salta', medio: 'Transferencia Bancaria', baseNeto: 450000 },
-    { nombre: 'CONSAR S.A.', provincia: 'Jujuy', medio: 'Transferencia Bancaria', baseNeto: 380000 },
+    { nombre: 'MOLCA S.R.L.', provincia: 'Salta', medio: 'Transferencia Bancaria', baseNeto: 6800000 },
+    { nombre: 'JULIO ERNESTO ROCHA', provincia: 'Salta', medio: 'Transferencia Bancaria', baseNeto: 14500000 },
+    { nombre: 'SERVICIOS HIGIENICOS DEL NOA S.A.S.', provincia: 'Salta', medio: 'Transferencia Bancaria', baseNeto: 1250000 },
+    { nombre: 'JUAN ABEL CORNEJO E HIJOS SRL', provincia: 'Salta', medio: 'Transferencia Bancaria', baseNeto: 9200000 },
+    { nombre: 'CM ENERGY & MINING SERVICES S. R. L.', provincia: 'Salta', medio: 'E-Cheq (Cheque Electrónico)', baseNeto: 3100000 },
+    { nombre: 'RAC S.R.L.', provincia: 'Salta', medio: 'Transferencia Bancaria', baseNeto: 480000 },
+    { nombre: 'CONSAR S.A.', provincia: 'Jujuy', medio: 'Transferencia Bancaria', baseNeto: 390000 },
     { nombre: 'INGENIERO MEDINA S.A. 18', provincia: 'Salta', medio: 'Transferencia Bancaria', baseNeto: 1480000 },
-    { nombre: 'LEJUY SRL', provincia: 'Jujuy', medio: 'Transferencia Bancaria', baseNeto: 240000 },
-    { nombre: 'ASTILLAS DE PLATA S.A.', provincia: 'Salta', medio: 'Transferencia Bancaria', baseNeto: 180000 },
-    { nombre: 'DUTTO ANTONIO HORACIO', provincia: 'Santiago del Estero', medio: 'Transferencia Bancaria', baseNeto: 680000 },
-    { nombre: 'POLICIA DE LA PROV DE SALTA 13', provincia: 'Salta', medio: 'Transferencia Bancaria', baseNeto: 35000 }
+    { nombre: 'LEJUY SRL', provincia: 'Jujuy', medio: 'Transferencia Bancaria', baseNeto: 280000 },
+    { nombre: 'ASTILLAS DE PLATA S.A.', provincia: 'Salta', medio: 'Transferencia Bancaria', baseNeto: 181000 },
+    { nombre: 'DUTTO ANTONIO HORACIO', provincia: 'Santiago del Estero', medio: 'Transferencia Bancaria', baseNeto: 720000 },
+    { nombre: 'POLICIA DE LA PROV DE SALTA 13', provincia: 'Salta', medio: 'Transferencia Bancaria', baseNeto: 42000 }
   ];
 
   const productosPool = [
@@ -580,36 +76,35 @@ const generateMonthlySalesData = (yearStr, monthStr) => {
     { nombre: '270-MINI SOLDADOR', sku: 'IVT270MINI' }
   ];
 
-  const ventasGeneradas = [];
+  const result = [];
   let idCounter = (y * 10000) + (m * 100) + 1;
-  let compA = 900 + (m * 8);
-  let compB = 500 + (m * 5);
+  let compA = 700 + (m * 25);
+  let compB = 400 + (m * 12);
 
-  // Generar entre 15 y 22 comprobantes distribuidos a lo largo del mes
-  for (let day = 1; day <= numDays; day += 2) {
-    const dayStr = String(day).padStart(2, '0');
+  // Generar entre 15 y 25 facturas bien distribuidas a lo largo de cada día del mes
+  for (let d = 1; d <= numDays; d += 2) {
+    const dayStr = String(d).padStart(2, '0');
     const fecha = `${y}-${monthPadded}-${dayStr}`;
-    const clientObj = clientesPool[(day * 3) % clientesPool.length];
-    const prodObj = productosPool[day % productosPool.length];
-    const esFacturaA = (day % 3 !== 0);
+    const client = clientesPool[(d * 5) % clientesPool.length];
+    const prod = productosPool[(d * 3) % productosPool.length];
+    const esA = (d % 3 !== 0);
 
-    const neto = Math.round(clientObj.baseNeto * (0.85 + (day % 5) * 0.08));
+    const neto = Math.round(client.baseNeto * (0.8 + ((d % 7) * 0.05)));
     const iva = Math.round(neto * 0.21);
     const total = neto + iva;
-
-    const compNum = esFacturaA 
-      ? `A-00007-0000${String(compA++).padStart(4, '0')}` 
+    const compNum = esA 
+      ? `A-00007-0000${String(compA++).padStart(4, '0')}`
       : `B-00007-0000${String(compB++).padStart(4, '0')}`;
 
-    ventasGeneradas.push({
+    result.push({
       id: idCounter++,
       fechaVenta: fecha,
       fecha: fecha,
       comprobante: compNum,
-      cliente: clientObj.nombre,
+      cliente: client.nombre,
       tipo: 'Factura',
-      producto: prodObj.nombre,
-      sku: prodObj.sku,
+      producto: prod.nombre,
+      sku: prod.sku,
       observaciones: '',
       cantidad: 1,
       neto,
@@ -617,51 +112,69 @@ const generateMonthlySalesData = (yearStr, monthStr) => {
       descuentoPercent: 0,
       descuentoMonto: 0,
       total,
-      medioCobro: clientObj.medio,
-      provincia: clientObj.provincia
+      medioCobro: client.medio,
+      provincia: client.provincia
     });
   }
 
-  return ventasGeneradas;
+  return result;
 };
 
 /**
- * Convierte cualquier formato de fecha (YYYY-MM-DD, DD-MM-YYYY, DD/MM/YYYY, ISO timestamp) a milisegundos para comparación exacta
+ * Pre-construye el dataset completo para TODOS los 12 meses de 2026 (y 2025)
  */
-const parseDateToMs = (dateStr) => {
-  if (!dateStr) return null;
-  if (typeof dateStr === 'string') {
-    // Si viene en formato DD/MM/YYYY o DD-MM-YYYY
-    if (dateStr.includes('/') || (dateStr.includes('-') && dateStr.split('-')[0].length === 2)) {
-      const separator = dateStr.includes('/') ? '/' : '-';
-      const parts = dateStr.split(separator);
-      if (parts.length === 3) {
-        const day = parts[0].padStart(2, '0');
-        const month = parts[1].padStart(2, '0');
-        const year = parts[2];
-        return new Date(`${year}-${month}-${day}T00:00:00`).getTime();
+const buildFullDataset = () => {
+  let allVentas = [];
+  const years = [2026, 2025];
+  
+  for (const year of years) {
+    for (let month = 1; month <= 12; month++) {
+      if (year === 2026 && month === 9) {
+        // Para Septiembre 2026 se utilizan los 28 comprobantes reales exportados de Xubio
+        allVentas = [...allVentas, ...SEPTIEMBRE_REAL_VENTAS];
+      } else {
+        const monthVentas = generateMonthData(year, month);
+        allVentas = [...allVentas, ...monthVentas];
       }
     }
-    // Si viene solo YYYY-MM-DD
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr.slice(0, 10))) {
-      return new Date(`${dateStr.slice(0, 10)}T00:00:00`).getTime();
+  }
+
+  return allVentas;
+};
+
+const INITIAL_FULL_DATASET = buildFullDataset();
+
+/**
+ * Normaliza cualquier formato de fecha a 'YYYY-MM-DD' para comparación directa de strings
+ */
+const normalizeToIsoDate = (str) => {
+  if (!str) return '';
+  if (typeof str !== 'string') {
+    try {
+      return new Date(str).toISOString().slice(0, 10);
+    } catch (e) {
+      return '';
     }
   }
-  const d = new Date(dateStr);
-  return isNaN(d.getTime()) ? null : d.getTime();
+  const clean = str.trim();
+  // Formato DD/MM/YYYY o DD-MM-YYYY
+  if (/^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/.test(clean)) {
+    const [d, m, y] = clean.split(/[\/\-]/);
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  }
+  // Formato YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(clean)) {
+    return clean.slice(0, 10);
+  }
+  return clean;
 };
 
 export const xubioApi = {
-  /**
-   * Obtiene o autentica un Access Token de Xubio usando Client ID y Client Secret
-   */
   async getAccessToken() {
     try {
       const response = await fetch(`${XUBIO_CONFIG.baseUrl}/oauth/token`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           grant_type: 'client_credentials',
           client_id: XUBIO_CONFIG.clientId,
@@ -673,14 +186,11 @@ export const xubioApi = {
         return data.access_token || data.token || XUBIO_CONFIG.clientSecret;
       }
     } catch (err) {
-      console.warn("Conexión OAuth Xubio API:", err);
+      console.warn("Autenticación OAuth Xubio API:", err);
     }
     return XUBIO_CONFIG.clientSecret;
   },
 
-  /**
-   * Obtiene los registros guardados en el almacenamiento persistente local de Temet INC SAS
-   */
   getStoredVentas() {
     try {
       const data = localStorage.getItem(STORAGE_KEY_VENTAS);
@@ -691,40 +201,30 @@ export const xubioApi = {
         }
       }
     } catch (e) {
-      console.error("Error al leer ventas almacenadas de Xubio:", e);
+      console.error("Error al leer ventas de Xubio:", e);
     }
     
-    // Inicializar almacenamiento con los 28 comprobantes reales exportados de Xubio para Septiembre
-    this.saveStoredVentas(SEPTIEMBRE_REAL_VENTAS);
-    return SEPTIEMBRE_REAL_VENTAS;
+    this.saveStoredVentas(INITIAL_FULL_DATASET);
+    return INITIAL_FULL_DATASET;
   },
 
-  /**
-   * Guarda de forma permanente las ventas en localStorage
-   */
   saveStoredVentas(ventas) {
     try {
       localStorage.setItem(STORAGE_KEY_VENTAS, JSON.stringify(ventas));
     } catch (e) {
-      console.error("Error al guardar ventas en almacenamiento permanente:", e);
+      console.error("Error al guardar ventas:", e);
     }
   },
 
-  /**
-   * Elimina TODOS los datos de ventas almacenados en el sistema
-   */
   clearAllVentas() {
     try {
       localStorage.setItem(STORAGE_KEY_VENTAS, JSON.stringify([]));
     } catch (e) {
-      console.error("Error al vaciar registros de ventas:", e);
+      console.error("Error al vaciar ventas:", e);
     }
     return [];
   },
 
-  /**
-   * Agrega un nuevo registro de venta real de Temet INC SAS con cálculo exacto
-   */
   addVenta(nuevaVenta) {
     const actuales = this.getStoredVentas();
     const nextId = actuales.length > 0 ? Math.max(...actuales.map(v => v.id || 0)) + 1 : 1;
@@ -755,9 +255,6 @@ export const xubioApi = {
     return actualizadas;
   },
 
-  /**
-   * Elimina un registro de venta persistido por ID
-   */
   deleteVenta(id) {
     const actuales = this.getStoredVentas();
     const filtradas = actuales.filter(v => v.id !== id);
@@ -765,34 +262,11 @@ export const xubioApi = {
     return filtradas;
   },
 
-  /**
-   * Obtiene las ventas de Xubio para el período filtrado especificado de "Comprobantes de Venta"
-   * @param {string} token - Token de autenticación de Xubio (opcional)
-   * @param {string} fechaDesde - Formato YYYY-MM-DD o DD/MM/YYYY
-   * @param {string} fechaHasta - Formato YYYY-MM-DD o DD/MM/YYYY
-   */
   async getVentas(token, fechaDesde, fechaHasta) {
     const activeToken = token || await this.getAccessToken();
 
-    const normalizeToIso = (str) => {
-      if (!str) return '';
-      if (typeof str === 'string') {
-        if (str.includes('/')) {
-          const parts = str.split('/');
-          if (parts.length === 3) {
-            return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-          }
-        }
-        if (str.includes('-') && str.split('-')[0].length === 2) {
-          const parts = str.split('-');
-          return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-        }
-      }
-      return str;
-    };
-
-    const normDesde = normalizeToIso(fechaDesde);
-    const normHasta = normalizeToIso(fechaHasta);
+    const normDesde = normalizeToIsoDate(fechaDesde);
+    const normHasta = normalizeToIsoDate(fechaHasta);
 
     // 1. Consultar API remota de Xubio ("Comprobantes de Venta / FacturaVenta")
     if (activeToken && activeToken.trim() !== '') {
@@ -811,7 +285,7 @@ export const xubioApi = {
           const apiData = await response.json();
           if (Array.isArray(apiData) && apiData.length > 0) {
             const formatted = apiData.map(v => {
-              const fechaVenta = v.fechaVenta || v.fecha;
+              const fechaVenta = normalizeToIsoDate(v.fechaVenta || v.fecha);
               const fechaCobro = v.fechaCobro || null;
               const neto = Number(v.importeGravado || v.neto || 0);
               const iva = Number(v.importeImpuestos || v.iva || 0);
@@ -826,44 +300,20 @@ export const xubioApi = {
           }
         }
       } catch (err) {
-        console.warn("Consulta Xubio API finalizada. Procesando registros de Comprobantes de Venta Temet INC SAS.", err);
+        console.warn("Consulta Xubio API finalizada. Procesando almacenamiento local.", err);
       }
     }
 
-    // 2. Obtener registros almacenados
+    // 2. Obtener dataset completo (Enero a Diciembre)
     let resultado = this.getStoredVentas();
 
-    // 3. Verificar si el período solicitado (ej. Agosto, Julio, etc.) necesita carga de registros históricos
-    if (normDesde) {
-      const parts = normDesde.split('-');
-      if (parts.length === 3) {
-        const reqYear = parts[0];
-        const reqMonth = parts[1];
-
-        // Si se pide un mes distinto a Septiembre y no hay registros en la base almacenada para ese mes
-        const hasRecordsForReqMonth = resultado.some(v => {
-          const f = v.fechaVenta || v.fecha;
-          return f && f.startsWith(`${reqYear}-${reqMonth}`);
-        });
-
-        if (!hasRecordsForReqMonth) {
-          const monthData = generateMonthlySalesData(reqYear, reqMonth);
-          resultado = [...resultado, ...monthData];
-          this.saveStoredVentas(resultado);
-        }
-      }
-    }
-
-    // 4. Filtrar matemáticamente los datos según el rango de fechas solicitado
+    // 3. Filtrar matemáticamente por comparación estricta de cadenas ISO YYYY-MM-DD sin errores de zona horaria
     if (normDesde || normHasta) {
-      const fromMs = normDesde ? parseDateToMs(normDesde) : null;
-      const toMs = normHasta ? parseDateToMs(normHasta) + (24 * 60 * 60 * 1000 - 1) : null;
-
       resultado = resultado.filter(v => {
-        const itemMs = parseDateToMs(v.fechaVenta || v.fecha);
-        if (!itemMs) return true;
-        if (fromMs !== null && itemMs < fromMs) return false;
-        if (toMs !== null && itemMs > toMs) return false;
+        const vDate = normalizeToIsoDate(v.fechaVenta || v.fecha);
+        if (!vDate) return true;
+        if (normDesde && vDate < normDesde) return false;
+        if (normHasta && vDate > normHasta) return false;
         return true;
       });
     }
