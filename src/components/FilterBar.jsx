@@ -1,5 +1,87 @@
-import React from 'react';
+import React, { useRef, useMemo } from 'react';
 import { Calendar, Filter, RotateCcw } from 'lucide-react';
+
+/**
+ * Componente de entrada de fecha dual:
+ * 1. Permite tipear manualmente la fecha en formato DD/MM/AAAA o YYYY-MM-DD.
+ * 2. Muestra un botón con ícono de Almanaque interactivo que despliega el calendario visual al hacer clic.
+ */
+function DateInputWithPicker({ label, value, onChange }) {
+  const dateInputRef = useRef(null);
+
+  // Convierte 'YYYY-MM-DD' a 'DD/MM/AAAA' para mostrar al usuario en formato argentino
+  const displayValue = useMemo(() => {
+    if (!value) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [y, m, d] = value.split('-');
+      return `${d}/${m}/${y}`;
+    }
+    return value;
+  }, [value]);
+
+  const handleTextChange = (e) => {
+    const val = e.target.value;
+    
+    // Si se tipea en formato DD/MM/AAAA o DD-MM-AAAA
+    if (/^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/.test(val)) {
+      const [d, m, y] = val.split(/[\/\-]/);
+      onChange(`${y}-${m}-${d}`);
+    } else {
+      onChange(val);
+    }
+  };
+
+  const handleNativeDateChange = (e) => {
+    if (e.target.value) {
+      onChange(e.target.value);
+    }
+  };
+
+  const handleOpenPicker = () => {
+    if (dateInputRef.current) {
+      if (typeof dateInputRef.current.showPicker === 'function') {
+        dateInputRef.current.showPicker();
+      } else {
+        dateInputRef.current.focus();
+        dateInputRef.current.click();
+      }
+    }
+  };
+
+  return (
+    <div className="flex items-center space-x-2 bg-slate-900 border border-slate-700 hover:border-slate-600 focus-within:border-cyan-400 rounded-lg px-2.5 py-1.5 text-xs transition-colors relative">
+      {/* Botón de Almanaque Interactivo */}
+      <button
+        type="button"
+        onClick={handleOpenPicker}
+        className="p-1 text-cyan-400 hover:text-cyan-300 hover:bg-slate-800 rounded transition-colors flex items-center justify-center shrink-0"
+        title="Clic para abrir Almanaque y seleccionar fecha"
+      >
+        <Calendar className="w-4 h-4" />
+      </button>
+
+      <span className="text-slate-400 font-medium select-none">{label}:</span>
+
+      {/* Entrada de Texto Editable Manualmente (DD/MM/AAAA) */}
+      <input
+        type="text"
+        placeholder="DD/MM/AAAA"
+        value={displayValue}
+        onChange={handleTextChange}
+        className="bg-transparent text-slate-100 placeholder-slate-500 focus:outline-none text-xs w-24 font-mono font-semibold"
+      />
+
+      {/* Input de Fecha Nativo Oculto para disparar el Almanaque Calendario */}
+      <input
+        ref={dateInputRef}
+        type="date"
+        value={/^\d{4}-\d{2}-\d{2}$/.test(value) ? value : ''}
+        onChange={handleNativeDateChange}
+        className="absolute inset-0 opacity-0 w-0 h-0 pointer-events-none"
+      />
+    </div>
+  );
+}
 
 export default function FilterBar({ fechaDesde, fechaHasta, setFechaDesde, setFechaHasta, onApplyFilter, onReset }) {
   
@@ -31,56 +113,46 @@ export default function FilterBar({ fechaDesde, fechaHasta, setFechaDesde, setFe
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* Fecha Desde */}
-          <div className="flex items-center space-x-2 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-slate-400">Desde:</span>
-            <input
-              type="date"
-              value={fechaDesde}
-              onChange={(e) => setFechaDesde(e.target.value)}
-              className="bg-transparent text-slate-100 focus:outline-none focus:ring-0 text-xs"
-            />
-          </div>
+          {/* Fecha Desde con Almanaque + Tipeado Manual */}
+          <DateInputWithPicker
+            label="Desde"
+            value={fechaDesde}
+            onChange={setFechaDesde}
+          />
 
-          {/* Fecha Hasta */}
-          <div className="flex items-center space-x-2 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-slate-400">Hasta:</span>
-            <input
-              type="date"
-              value={fechaHasta}
-              onChange={(e) => setFechaHasta(e.target.value)}
-              className="bg-transparent text-slate-100 focus:outline-none focus:ring-0 text-xs"
-            />
-          </div>
+          {/* Fecha Hasta con Almanaque + Tipeado Manual */}
+          <DateInputWithPicker
+            label="Hasta"
+            value={fechaHasta}
+            onChange={setFechaHasta}
+          />
 
-          {/* Presets */}
+          {/* Presets de Períodos Rápidos */}
           <div className="flex items-center space-x-1 border-l border-slate-700 pl-2">
             <button
               onClick={() => setPresetPeriod('month')}
-              className="px-2.5 py-1 text-xs rounded bg-slate-700/60 hover:bg-slate-700 text-slate-200 transition-colors"
+              className="px-2.5 py-1.5 text-xs rounded bg-slate-700/60 hover:bg-slate-700 text-slate-200 font-medium transition-colors"
             >
               Este Mes
             </button>
             <button
               onClick={() => setPresetPeriod('q3')}
-              className="px-2.5 py-1 text-xs rounded bg-slate-700/60 hover:bg-slate-700 text-slate-200 transition-colors"
+              className="px-2.5 py-1.5 text-xs rounded bg-slate-700/60 hover:bg-slate-700 text-slate-200 font-medium transition-colors"
             >
               Trimestre 3
             </button>
             <button
               onClick={() => setPresetPeriod('all')}
-              className="px-2.5 py-1 text-xs rounded bg-slate-700/60 hover:bg-slate-700 text-slate-200 transition-colors"
+              className="px-2.5 py-1.5 text-xs rounded bg-slate-700/60 hover:bg-slate-700 text-slate-200 font-medium transition-colors"
             >
               Todo
             </button>
           </div>
 
-          {/* Actions */}
+          {/* Botones de Acción */}
           <button
             onClick={onApplyFilter}
-            className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white transition-colors shadow-sm"
+            className="px-4 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition-colors shadow-sm"
           >
             Filtrar
           </button>
