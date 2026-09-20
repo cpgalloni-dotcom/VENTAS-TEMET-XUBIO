@@ -10,7 +10,7 @@ const XUBIO_CONFIG = {
 
 const STORAGE_KEY_VENTAS = 'temet_real_ventas_store';
 
-// Registros de ventas de base para TEMET (se inicializan si localStorage está vacío)
+// Registros de ventas de base para TEMET (se inicializan si la clave no existe)
 const INITIAL_REAL_VENTAS = [
   { id: 1, fechaVenta: '2026-09-18', fecha: '2026-09-18', fechaCobro: '2026-09-20', producto: 'Tablero de Control TEMET Pro', cantidad: 2, neto: 1200000, iva: 252000, descuentoPercent: 5, descuentoMonto: 72600, total: 1379400, medioCobro: 'Transferencia Bancaria' },
   { id: 2, fechaVenta: '2026-09-12', fecha: '2026-09-12', fechaCobro: null, producto: 'Servicio de Mantenimiento Anual', cantidad: 1, neto: 850000, iva: 178500, descuentoPercent: 0, descuentoMonto: 0, total: 1028500, medioCobro: 'E-Cheq (Cheque Electrónico)' },
@@ -52,9 +52,9 @@ export const xubioApi = {
   getStoredVentas() {
     try {
       const data = localStorage.getItem(STORAGE_KEY_VENTAS);
-      if (data) {
+      if (data !== null) {
         const parsed = JSON.parse(data);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           return parsed;
         }
       }
@@ -62,7 +62,7 @@ export const xubioApi = {
       console.error("Error al leer ventas almacenadas:", e);
     }
     
-    // Inicializar almacenamiento si estaba vacío
+    // Inicializar almacenamiento solo si la clave no existía previamente
     this.saveStoredVentas(INITIAL_REAL_VENTAS);
     return INITIAL_REAL_VENTAS;
   },
@@ -76,6 +76,18 @@ export const xubioApi = {
     } catch (e) {
       console.error("Error al guardar ventas en almacenamiento permanente:", e);
     }
+  },
+
+  /**
+   * Elimina TODOS los datos de ventas almacenados en el sistema
+   */
+  clearAllVentas() {
+    try {
+      localStorage.setItem(STORAGE_KEY_VENTAS, JSON.stringify([]));
+    } catch (e) {
+      console.error("Error al vaciar registros de ventas:", e);
+    }
+    return [];
   },
 
   /**

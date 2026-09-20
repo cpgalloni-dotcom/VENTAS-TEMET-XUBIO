@@ -10,7 +10,6 @@ import QuadrantVerticalBarChart from './components/QuadrantVerticalBarChart';
 import QuadrantPieChart from './components/QuadrantPieChart';
 import TransactionsTable from './components/TransactionsTable';
 import TokenModal from './components/TokenModal';
-import AddSaleModal from './components/AddSaleModal';
 
 import { xubioApi } from './services/xubioApi';
 import { processSalesData } from './utils/analytics';
@@ -28,7 +27,6 @@ export default function App() {
   const [error, setError] = useState(null);
   
   const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
-  const [isAddSaleModalOpen, setIsAddSaleModalOpen] = useState(false);
 
   // Fetch sales from Xubio API service
   const fetchVentas = useCallback(async () => {
@@ -63,13 +61,15 @@ export default function App() {
     setFechaHasta('');
   };
 
-  const handleAddSale = (nuevaVenta) => {
-    const actualizadas = xubioApi.addVenta(nuevaVenta);
-    setTransactions(actualizadas);
+  const handleClearAllSales = () => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar TODOS los datos de ventas cargados en el sistema?')) {
+      const vacias = xubioApi.clearAllVentas();
+      setTransactions(vacias);
+    }
   };
 
   const handleDeleteSale = (id) => {
-    if (window.confirm('¿Deseas eliminar permanentemente este registro de venta?')) {
+    if (window.confirm('¿Deseas eliminar este registro de venta?')) {
       const actualizadas = xubioApi.deleteVenta(id);
       setTransactions(actualizadas);
     }
@@ -149,10 +149,10 @@ export default function App() {
 
         </div>
 
-        {/* Detailed Transactions List with Real Sales Entry */}
+        {/* Detailed Transactions List with Clear All Sales Option */}
         <TransactionsTable 
           transactions={transactions} 
-          onOpenAddModal={() => setIsAddSaleModalOpen(true)}
+          onClearAllSales={handleClearAllSales}
           onDeleteSale={handleDeleteSale}
         />
 
@@ -169,13 +169,6 @@ export default function App() {
         onClose={() => setIsTokenModalOpen(false)}
         token={token}
         onSaveToken={handleSaveToken}
-      />
-
-      {/* Registrar Nueva Venta Real Modal */}
-      <AddSaleModal
-        isOpen={isAddSaleModalOpen}
-        onClose={() => setIsAddSaleModalOpen(false)}
-        onSaleAdded={handleAddSale}
       />
     </div>
   );

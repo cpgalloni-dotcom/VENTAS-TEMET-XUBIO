@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Search, Download, FileSpreadsheet, FileText, CreditCard, Building2, Banknote, Landmark, Wallet, Clock, CalendarCheck, PlusCircle, Trash2 } from 'lucide-react';
+import { Search, Download, FileSpreadsheet, FileText, CreditCard, Building2, Banknote, Landmark, Wallet, Clock, CalendarCheck, Trash2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { formatCurrency } from '../utils/analytics';
 
-export default function TransactionsTable({ transactions = [], onOpenAddModal, onDeleteSale }) {
+export default function TransactionsTable({ transactions = [], onClearAllSales, onDeleteSale }) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredTransactions = transactions.filter(tx => {
@@ -161,15 +161,17 @@ export default function TransactionsTable({ transactions = [], onOpenAddModal, o
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          {/* Cargar Venta Real Button */}
-          <button
-            onClick={onOpenAddModal}
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white transition-colors shadow-md shadow-cyan-600/20"
-            title="Cargar nueva venta real en el sistema"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>+ Cargar Venta Real</span>
-          </button>
+          {/* Botón Eliminar Todos los Datos */}
+          {onClearAllSales && (
+            <button
+              onClick={onClearAllSales}
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white transition-colors shadow-md shadow-rose-600/20"
+              title="Eliminar todos los datos de ventas cargados en el sistema"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Eliminar</span>
+            </button>
+          )}
 
           {/* Search Box */}
           <div className="relative">
@@ -226,7 +228,7 @@ export default function TransactionsTable({ transactions = [], onOpenAddModal, o
             {filteredTransactions.length === 0 ? (
               <tr>
                 <td colSpan={onDeleteSale ? "10" : "9"} className="py-8 text-center text-slate-500 italic">
-                  No se encontraron transacciones registradas. Haz clic en <strong>"+ Cargar Venta Real"</strong> para ingresar nuevas facturas.
+                  No se encontraron transacciones registradas en el sistema. Todos los datos han sido eliminados.
                 </td>
               </tr>
             ) : (
@@ -270,7 +272,7 @@ export default function TransactionsTable({ transactions = [], onOpenAddModal, o
                       <button
                         onClick={() => onDeleteSale(tx.id)}
                         className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
-                        title="Eliminar registro"
+                        title="Eliminar este registro"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
