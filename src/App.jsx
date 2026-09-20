@@ -75,6 +75,11 @@ export default function App() {
     }
   };
 
+  const handleImportXubioData = (newTransactions) => {
+    xubioApi.saveStoredVentas(newTransactions);
+    setTransactions(newTransactions);
+  };
+
   const { kpi, productsList, maxProduct } = processSalesData(transactions);
 
   return (
@@ -149,11 +154,12 @@ export default function App() {
 
         </div>
 
-        {/* Detailed Transactions List with Clear All Sales Option */}
+        {/* Detailed Transactions List with Clear All Sales Option and Xubio Import */}
         <TransactionsTable 
           transactions={transactions} 
           onClearAllSales={handleClearAllSales}
           onDeleteSale={handleDeleteSale}
+          onImportXubioData={handleImportXubioData}
         />
 
       </main>
