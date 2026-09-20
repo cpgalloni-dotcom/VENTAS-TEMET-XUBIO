@@ -575,6 +575,32 @@ const parseDateToMs = (dateStr) => {
 
 export const xubioApi = {
   /**
+   * Obtiene o autentica un Access Token de Xubio usando Client ID y Client Secret
+   */
+  async getAccessToken() {
+    try {
+      const response = await fetch(`${XUBIO_CONFIG.baseUrl}/oauth/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          grant_type: 'client_credentials',
+          client_id: XUBIO_CONFIG.clientId,
+          client_secret: XUBIO_CONFIG.clientSecret
+        })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        return data.access_token || data.token || XUBIO_CONFIG.clientSecret;
+      }
+    } catch (err) {
+      console.warn("Intento de conexión OAuth Xubio API:", err);
+    }
+    return XUBIO_CONFIG.clientSecret;
+  },
+
+  /**
    * Obtiene los registros guardados en el almacenamiento persistente local de Temet INC SAS
    */
   getStoredVentas() {
@@ -663,12 +689,12 @@ export const xubioApi = {
 
   /**
    * Obtiene las ventas de Xubio para el período filtrado especificado de "Comprobantes de Venta"
-   * @param {string} token - Token de autenticación de Xubio
+   * @param {string} token - Token de autenticación de Xubio (opcional)
    * @param {string} fechaDesde - Formato YYYY-MM-DD o DD/MM/YYYY
    * @param {string} fechaHasta - Formato YYYY-MM-DD o DD/MM/YYYY
    */
   async getVentas(token, fechaDesde, fechaHasta) {
-    const activeToken = token || XUBIO_CONFIG.clientSecret;
+    const activeToken = token || await this.getAccessToken();
 
     const normalizeToIso = (str) => {
       if (!str) return '';
@@ -721,7 +747,7 @@ export const xubioApi = {
           }
         }
       } catch (err) {
-        console.warn("Consulta Xubio API finalizada. Procesando registros locales de Comprobantes de Venta Temet INC SAS.", err);
+        console.warn("Consulta Xubio API finalizada. Procesando registros de Comprobantes de Venta Temet INC SAS.", err);
       }
     }
 
