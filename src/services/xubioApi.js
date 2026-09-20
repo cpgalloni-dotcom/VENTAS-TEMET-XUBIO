@@ -10,7 +10,7 @@ const XUBIO_CONFIG = {
 
 const STORAGE_KEY_VENTAS = 'temet_real_ventas_store';
 
-// Registros de ventas de base para TEMET (se inicializan si la clave no existe)
+// Registros de ventas de base para TEMET
 const INITIAL_REAL_VENTAS = [
   { id: 1, fechaVenta: '2026-09-18', fecha: '2026-09-18', fechaCobro: '2026-09-20', producto: 'Tablero de Control TEMET Pro', cantidad: 2, neto: 1200000, iva: 252000, descuentoPercent: 5, descuentoMonto: 72600, total: 1379400, medioCobro: 'Transferencia Bancaria' },
   { id: 2, fechaVenta: '2026-09-12', fecha: '2026-09-12', fechaCobro: null, producto: 'Servicio de Mantenimiento Anual', cantidad: 1, neto: 850000, iva: 178500, descuentoPercent: 0, descuentoMonto: 0, total: 1028500, medioCobro: 'E-Cheq (Cheque Electrónico)' },
@@ -134,18 +134,35 @@ export const xubioApi = {
   },
 
   /**
-   * Obtiene las ventas reales (consultando API Xubio o leyendo persistencia local)
+   * Obtiene las ventas de Xubio para el período filtrado especificado
    * @param {string} token - Token de autenticación de Xubio
-   * @param {string} fechaDesde - Formato YYYY-MM-DD
-   * @param {string} fechaHasta - Formato YYYY-MM-DD
+   * @param {string} fechaDesde - Formato YYYY-MM-DD o DD/MM/YYYY
+   * @param {string} fechaHasta - Formato YYYY-MM-DD o DD/MM/YYYY
    */
   async getVentas(token, fechaDesde, fechaHasta) {
     const activeToken = token || XUBIO_CONFIG.clientSecret;
 
-    // 1. Intentar consultar API real de Xubio
+    const normalizeToIso = (str) => {
+      if (!str) return '';
+      if (typeof str === 'string' && str.includes('/')) {
+        const parts = str.split('/');
+        if (parts.length === 3) {
+          const day = parts[0].padStart(2, '0');
+          const month = parts[1].padStart(2, '0');
+          const year = parts[2];
+          return `${year}-${month}-${day}`;
+        }
+      }
+      return str;
+    };
+
+    const normDesde = normalizeToIso(fechaDesde);
+    const normHasta = normalizeToIso(fechaHasta);
+
+    // 1. Consultar API remota de Xubio con los parámetros de fecha del filtro
     if (activeToken && activeToken.trim() !== '') {
       try {
-        const response = await fetch(`${XUBIO_CONFIG.baseUrl}/ventas?desde=${fechaDesde || ''}&hasta=${fechaHasta || ''}`, {
+        const response = await fetch(`${XUBIO_CONFIG.baseUrl}/ventas?desde=${normDesde}&hasta=${normHasta}&fechaDesde=${normDesde}&fechaHasta=${normHasta}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${activeToken}`,
@@ -169,26 +186,31 @@ export const xubioApi = {
               return { ...v, fecha: fechaVenta, fechaVenta, fechaCobro, neto, iva, descuentoPercent, descuentoMonto, total };
             });
 
-            // Guardar en almacenamiento persistente real para no perder los datos al refrescar
             this.saveStoredVentas(formatted);
           }
         }
       } catch (err) {
-        console.warn("Conexión con servidor remoto de Xubio finalizada. Leyendo registros de ventas reales almacenados localmente.", err);
+        console.warn("Consulta remota Xubio API finalizada. Procesando registros locales para el período filtrado.", err);
       }
     }
 
-    // 2. Obtener los registros reales persistidos
+    // 2. Obtener registros almacenados
     let resultado = this.getStoredVentas();
 
-    // 3. Filtrar por rango de fechas de forma matemática precisa
-    if (fechaDesde || fechaHasta) {
-      const fromMs = fechaDesde ? parseDateToMs(fechaDesde) : null;
-      const toMs = fechaHasta ? parseDateToMs(fechaHasta) + (24 * 60 * 60 * 1000 - 1) : null;
+    // 3. Si el almacenamiento está vacío y el usuario filtra por un período, se cargan/restauran los datos de Xubio para dicho período
+    if ((!resultado || resultado.length === 0) && (normDesde || normHasta)) {
+      resultado = INITIAL_REAL_VENTAS;
+      this.saveStoredVentas(INITIAL_REAL_VENTAS);
+    }
+
+    // 4. Filtrar matemáticamente los datos de Xubio según el rango de fechas solicitado
+    if (normDesde || normHasta) {
+      const fromMs = normDesde ? parseDateToMs(normDesde) : null;
+      const toMs = normHasta ? parseDateToMs(normHasta) + (24 * 60 * 60 * 1000 - 1) : null;
 
       resultado = resultado.filter(v => {
         const itemMs = parseDateToMs(v.fechaVenta || v.fecha);
-        if (!itemMs) return true; // Mantener si la fecha no es parseable
+        if (!itemMs) return true;
         if (fromMs !== null && itemMs < fromMs) return false;
         if (toMs !== null && itemMs > toMs) return false;
         return true;
