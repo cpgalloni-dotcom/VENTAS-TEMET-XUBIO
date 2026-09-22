@@ -1,6 +1,6 @@
 /**
  * Servicio de conexión con la API de Xubio y Almacenamiento Persistente Real para Temet INC SAS
- * Soporte Multi-Mes Completo (Enero a Diciembre 2026 / 2025)
+ * Soporte Multi-Mes Completo (Enero a Diciembre 2026 / 2025) y Servidor Proxy anti-CORS para Railway
  */
 const XUBIO_CONFIG = {
   baseUrl: 'https://api.xubio.com/v1',
@@ -43,9 +43,6 @@ const SEPTIEMBRE_REAL_VENTAS = [
   { id: 28, fechaVenta: '2026-09-01', fecha: '2026-09-01', comprobante: 'A-00007-00000988', cliente: 'DUTTO ANTONIO HORACIO', tipo: 'Factura', producto: 'EQUIPO INDUSTRIAL', sku: 'XUB-988', neto: 724520.00, iva: 152149.20, total: 876669.20, medioCobro: 'Transferencia Bancaria', provincia: 'Santiago del Estero' }
 ];
 
-/**
- * Generador automático de datos de ventas para cada mes del año
- */
 const generateMonthData = (yearNum, monthNum) => {
   const y = parseInt(yearNum, 10);
   const m = parseInt(monthNum, 10);
@@ -162,11 +159,10 @@ const normalizeToIsoDate = (str) => {
 export const xubioApi = {
   async getAccessToken() {
     try {
-      const response = await fetch(`${XUBIO_CONFIG.baseUrl}/oauth/token`, {
+      const response = await fetch('/api/xubio/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          grant_type: 'client_credentials',
           client_id: XUBIO_CONFIG.clientId,
           client_secret: XUBIO_CONFIG.clientSecret
         })
@@ -176,28 +172,24 @@ export const xubioApi = {
         return data.access_token || data.token || XUBIO_CONFIG.clientSecret;
       }
     } catch (err) {
-      console.warn("Autenticación OAuth Xubio API:", err);
+      console.warn("Proxy OAuth Xubio API:", err);
     }
     return XUBIO_CONFIG.clientSecret;
   },
 
-  /**
-   * Obtiene las ventas de localStorage. Si la clave fue creada y es [] (eliminada por el usuario), devuelve [] estrictamente.
-   */
   getStoredVentas() {
     try {
       const data = localStorage.getItem(STORAGE_KEY_VENTAS);
       if (data !== null) {
         const parsed = JSON.parse(data);
         if (Array.isArray(parsed)) {
-          return parsed; // Devuelve exactamente lo que hay, incluso si es [] (vacio/eliminado)
+          return parsed;
         }
       }
     } catch (e) {
       console.error("Error al leer ventas de Xubio:", e);
     }
     
-    // Solo si el almacenamiento NUNCA fue creado anteriormente en esta máquina
     this.saveStoredVentas(INITIAL_FULL_DATASET);
     return INITIAL_FULL_DATASET;
   },
@@ -210,9 +202,6 @@ export const xubioApi = {
     }
   },
 
-  /**
-   * Elimina PERMANENTEMENTE todos los datos de ventas del sistema
-   */
   clearAllVentas() {
     try {
       localStorage.setItem(STORAGE_KEY_VENTAS, JSON.stringify([]));
@@ -222,9 +211,6 @@ export const xubioApi = {
     return [];
   },
 
-  /**
-   * Restablece la base de datos inicial completa de Xubio
-   */
   restoreInitialDataset() {
     this.saveStoredVentas(INITIAL_FULL_DATASET);
     return INITIAL_FULL_DATASET;
@@ -273,16 +259,14 @@ export const xubioApi = {
     const normDesde = normalizeToIsoDate(fechaDesde);
     const normHasta = normalizeToIsoDate(fechaHasta);
 
-    // 1. Consultar API remota de Xubio ("Comprobantes de Venta / FacturaVenta")
+    // 1. Consultar API remota de Xubio a través del Proxy Backend (/api/xubio/facturaVenta) para evitar restricciones CORS en Railway
     if (activeToken && activeToken.trim() !== '') {
       try {
-        const response = await fetch(`${XUBIO_CONFIG.baseUrl}/facturaVenta?desde=${normDesde}&hasta=${normHasta}&fechaDesde=${normDesde}&fechaHasta=${normHasta}`, {
+        const response = await fetch(`/api/xubio/facturaVenta?desde=${normDesde}&hasta=${normHasta}&token=${encodeURIComponent(activeToken)}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${activeToken}`,
-            'Content-Type': 'application/json',
-            'Company': 'Temet INC SAS',
-            'Client-Id': XUBIO_CONFIG.clientId
+            'Content-Type': 'application/json'
           }
         });
 
@@ -305,14 +289,13 @@ export const xubioApi = {
           }
         }
       } catch (err) {
-        console.warn("Consulta Xubio API finalizada. Procesando almacenamiento local.", err);
+        console.warn("Consulta Proxy Xubio API finalizada. Procesando datos de Temet INC SAS.", err);
       }
     }
 
     // 2. Obtener dataset almacenado
     let resultado = this.getStoredVentas();
 
-    // SI EL USUARIO ELIMINÓ TODO ([]), SE RESPETA ESTRICTAMENTE Y NO SE RE-POPULA NADA
     if (!resultado || resultado.length === 0) {
       return [];
     }
