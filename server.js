@@ -18,6 +18,11 @@ const XUBIO_CONFIG = {
   clientSecret: process.env.XUBIO_CLIENT_SECRET || 'AMho3q0l5qwNhYpZVCAzi7sBiBnHLf4_n'
 };
 
+// Healthcheck para Railway
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 // Proxy para obtener token de Xubio desde el servidor backend (evita CORS en el navegador)
 app.post('/api/xubio/token', async (req, res) => {
   try {
@@ -84,6 +89,7 @@ app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`Server TEMET Xubio Proxy corriendo en puerto ${PORT}`);
+// Vincular obligatoriamente a 0.0.0.0 para que el Proxy de Railway comunique el puerto del contenedor
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server TEMET Xubio Proxy corriendo en 0.0.0.0:${PORT}`);
 });
